@@ -55,4 +55,4 @@ def get_projects():
 if __name__ == "__main__":
     # logic for connecting to db 
 
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=80, debug=True)
