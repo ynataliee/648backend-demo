@@ -40,15 +40,26 @@ def get_projects():
     response = jsonify(data)
     return response
 
-# @app.route("/get-user/<user+id>")
-# def getuser(userid):
-#     userdata = {
-#         "userId": userid,
-#         "name": "jonh john", 
-#         "email": "johnjohn@gmail.com",
-#     }
+@app.route("/search", methods = ["GET"])
+def job_search():
+    tags = request.args.get('tags')
+    #print("TAGS: ", tags, "\n\n")
+    db = get_database("sample_training")
+    collection = db["jobDescriptions"]
 
-#     params = request.args.get("")
+    print("tag from query: ", tags, "\n")
+    projection = {"_id" : 0}
+    matchedDocs = collection.find({"tags": tags}, projection)
+    jsonDocs = []
+    print("got the results")
+    for doc in matchedDocs:
+        print(doc.get("jobTitle"))
+        print(type(doc))
+        print(doc)
+        #jsonDoc = json.dumps(doc)
+        jsonDocs.append(doc)
+    
+    return jsonify({"jobs": jsonDocs})
 
 # if we run the file directly do this, if we are importing this file then dont
 # do this, maybe you just want another file to access the functions 
