@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from config import get_database, app
+import re
 # jsonify is used to create a json response
 # CORS is for cross origin requests 
 # CORS gives web servers the ability to say they want to opt into allowing 
@@ -49,7 +50,11 @@ def job_search():
 
     print("tag from query: ", tags, "\n")
     projection = {"_id" : 0}
-    matchedDocs = collection.find({"tags": tags}, projection)
+
+    regex_pattern = re.escape(tags) + '.*'
+    regex_query = {"tags": {"$regex": regex_pattern, "$options": "i"}}
+
+    matchedDocs = collection.find(regex_query, projection)
     jsonDocs = []
     print("got the results")
     for doc in matchedDocs:
@@ -66,4 +71,4 @@ def job_search():
 if __name__ == "__main__":
     # logic for connecting to db 
 
-    app.run(host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", port=5000)
