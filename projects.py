@@ -77,6 +77,4 @@ def generateProjects(job, userContext="No additional info at this moment"):
     )
 
     response_as_dict = output_parser.parse(response.content)
-    # Convert dictionary to JSON format
-    response_as_json = json.dumps(response_as_dict)
-    return response_as_json
+    return response_as_dict
