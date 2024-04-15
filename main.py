@@ -184,6 +184,34 @@ def login():
             "status": "401"
         })
 
+@app.route("/logout", methods = ["POST"])
+@jwt_required()
+def logout():
+    db = get_database("sample_training")
+    collection = db["sessions"]
+
+    requestEmail = request.json["email"]
+    if(requestEmail != get_jwt_identity()):
+        return jsonify({
+            "response": "You are not authorized to perform this action",
+            "status": "401"
+        })
+
+    requestToken = request.json["token"]
+
+    if( validateSession(requestEmail, requestToken) == True ):
+        query = collection.find_one({"email": requestEmail}, {'_id': False})
+        collection.delete_one(query)
+        return jsonify({
+            "response": "User has been logged out",
+            "status": "200"
+        })
+    else:
+        return jsonify({
+            "response": "Unable to perform logout",
+            "status": "404"
+        })
+
 
 @app.route("/projects", methods = ["GET"])
 def get_projects():
@@ -285,7 +313,7 @@ def getJobs():
         db = get_database("sample_training")
         collection = db["testUsers"]
         # check if the user exists in the database with thier email 
-        email = request.json.get("email")
+        email = request.headers["email"]
         doc = collection.find_one({"email": email}, {"_id": 0})
         if doc == None:
             return jsonify({"Message": f"No user with email {email} exists."})
@@ -326,13 +354,8 @@ def getJobs():
         #with open("./output/jobsAPIResponse2.pickle", "wb") as pickle_file:
             #pickle.dump(responseToDict, pickle_file)
         
-        jobList = jsonDict["data"]
-        for job in jobList:
-            title = job["job_title"]
-            applyLink = job["job_apply_link"]
-            description = job["job_description"]
-        
         return dummyJsonData #jsonJobsResponse
+
     if request.method == "POST":
          # loading database
         db = get_database("sample_training")
