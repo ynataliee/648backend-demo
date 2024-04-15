@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, abort
 from config import get_database, app
-
+import requests
+import pickle
+import json
 import os
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from dotenv import load_dotenv
@@ -262,10 +264,10 @@ def interestTags():
         return jsonify({"savedInterests": savedInterests})
 
 def isNewJob(job, likedJobs):
-    """ 
-        likedJobs is a list of dictionaries
-        job is single dictionary with info about a job
-    """
+	""" 
+       	 	likedJobs is a list of dictionaries
+        	job is single dictionary with info about a job
+	"""
 	if len(likedJobs) == 0:
 		return True
 
