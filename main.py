@@ -266,82 +266,92 @@ def isNewJob(job, likedJobs):
         likedJobs is a list of dictionaries
         job is single dictionary with info about a job
     """
-	if len(likedJobs) == 0:
-		return True
+    if len(likedJobs) == 0:
+        return True
 
-    	title = job["job_title"]
-   	print("title : ", title, "\n")
-    	for job in likedJobs:
-        	if job["job_title"] == title:
-            		return False
-    	return True
-
+    title = job["job_title"]
+    print("title : ", title, "\n")
+    for job in likedJobs:
+        if job["job_title"] == title:
+            return False
+    return True
 @app.route("/getJobs", methods = ["GET", "POST"])
 def getJobs():
-    	if request.method == "GET":
-        	# loading database
-        	db = get_database("sample_training")
-        	collection = db["testUsers"]
-        	# check if the user exists in the database with thier email 
-        	email = request.json.get("email")
-        	doc = collection.find_one({"email": email}, {"_id": 0})
-        	if doc == None:
-            		return jsonify({"Message": f"No user with email {email} exists."})
-        	# if we made it to here then we have the users information
-        	savedInterests = doc["interests"]
+    if request.method == "GET":
+        # loading database
+        db = get_database("sample_training")
+        collection = db["testUsers"]
+        # check if the user exists in the database with thier email 
+        email = request.json.get("email")
+        doc = collection.find_one({"email": email}, {"_id": 0})
+        if doc == None:
+            return jsonify({"Message": f"No user with email {email} exists."})
+        # if we made it to here then we have the users information
+        savedInterests = doc["interests"]
 
-        	# handle the case where the user has no saved interests yet 
-        	if len(savedInterests) == 0:
-            		return jsonify({"Message": f"User with email {email} has no saved interests.", "Error": "No saved interests."})
+        # handle the case where the user has no saved interests yet 
+        if len(savedInterests) == 0:
+            return jsonify({"Message": f"User with email {email} has no saved interests.", "Error": "No saved interests."})
         
-        	# call the jobs api to search for jobs 
-        	url = "https://jsearch.p.rapidapi.com/search"
+        # call the jobs api to search for jobs 
+        url = "https://jsearch.p.rapidapi.com/search"
 
-        	# format request to jobsAPI 
-        	querystring = {"query":f" {savedInterests} internships in san francisco ca","page":"1","num_pages":"1"}
-        	headers = {
-            		"X-RapidAPI-Key": "377585313cmshf1355d5b402d248p1b423bjsn233ad30d00f0",
-            		"X-RapidAPI-Host": "jsearch.p.rapidapi.com"
-        	}
+        # format request to jobsAPI 
+        querystring = {"query":f" {savedInterests} internships in san francisco ca","page":"1","num_pages":"1"}
+        headers = {
+            "X-RapidAPI-Key": "377585313cmshf1355d5b402d248p1b423bjsn233ad30d00f0",
+            "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+        }
 
-        	# uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
-        	#jobsApiRes = requests.get(url, headers=headers, params=querystring)
-        	#jsonJobsResponse = jobsApiRes.json()
+        # uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
+        #jobsApiRes = requests.get(url, headers=headers, params=querystring)
+        #jsonJobsResponse = jobsApiRes.json()
 
-        	# Open the pickle file where the jobsAPI response was saved, to use it as example data 
-        	# to not waste our free api calls
-        	with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
-            	# Deserialize the data from the file
-            	data = pickle.load(f)
-        	# turn the saved jobsapi response to json format 
-        	dummyJsonData = json.dumps(data)
-        	jsonDict = json.loads(dummyJsonData)
-        	print(type(jsonDict))
+        # Open the pickle file where the jobsAPI response was saved, to use it as example data 
+        # to not waste our free api calls
+        with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
+            # Deserialize the data from the file
+            data = pickle.load(f)
+        # turn the saved jobsapi response to json format 
+        dummyJsonData = json.dumps(data)
+        jsonDict = json.loads(dummyJsonData)
+        print(type(jsonDict))
+        # pickle json response so that we dont have to make more calls to the jobs API
+        # Convert JSON object to a Python dictionary
+        #responseToDict = json.loads(json.dumps(jsonJobsResponse))
+        # Pickle the Python dictionary
+        #with open("./output/jobsAPIResponse2.pickle", "wb") as pickle_file:
+            #pickle.dump(responseToDict, pickle_file)
         
-        	return dummyJsonData #jsonJobsResponse
-    
-	if request.method == "POST":
-        	# loading database
-        	db = get_database("sample_training")
-        	collection = db["testUsers"]
-        	# check if the user exists in the database with thier email 
-        	email = request.json.get("email")
-        	doc = collection.find_one({"email": email}, {"_id": 0})
-        	if doc == None:
-            		return jsonify({"Message": f"No user with email {email} exists."})
+        jobList = jsonDict["data"]
+        for job in jobList:
+            title = job["job_title"]
+            applyLink = job["job_apply_link"]
+            description = job["job_description"]
         
-        	# save the jobs into the users likedJobs field
-        	likedJobs = doc["likedJobs"]
-        	recievedJobs = request.json.get("jobsSelected")
-        	for job in recievedJobs:
-            		newJob = isNewJob(job, likedJobs)
-            	if newJob:
-                	likedJobs.append(job)
+        return dummyJsonData #jsonJobsResponse
+    if request.method == "POST":
+         # loading database
+        db = get_database("sample_training")
+        collection = db["testUsers"]
+        # check if the user exists in the database with thier email 
+        email = request.json.get("email")
+        doc = collection.find_one({"email": email}, {"_id": 0})
+        if doc == None:
+            return jsonify({"Message": f"No user with email {email} exists."})
+        
+        # save the jobs into the users likedJobs field
+        likedJobs = doc["likedJobs"]
+        recievedJobs = request.json.get("jobsSelected")
+        for job in recievedJobs:
+            newJob = isNewJob(job, likedJobs)
+            if newJob:
+                likedJobs.append(job)
 
-        	update = {"$set": {"likedJobs": likedJobs}}
-        	collection.update_one({"email": email}, update) 
+        update = {"$set": {"likedJobs": likedJobs}}
+        collection.update_one({"email": email}, update) 
 
-        	return jsonify({"jobsAdded": likedJobs})
+        return jsonify({"jobsAdded": likedJobs})
 
 
 
