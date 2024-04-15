@@ -381,7 +381,7 @@ def getJobs():
             if newJob:
                 likedJobs.append(job)
 
-        update = {"$set": {"likedJobs": likedJobs}}
+        update = {"$set": {"likedJobs": likedJobs, "currentlySelectedJobs": recievedJobs}}
         collection.update_one({"email": email}, update) 
 
         return jsonify({"jobsAdded": likedJobs})
