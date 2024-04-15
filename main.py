@@ -278,6 +278,9 @@ def interestTags():
 
         email = request.json.get("email")
         recievedInterests = request.json.get("selectedInterests")
+        # exception handling
+        if recievedInterests == None:
+            return jsonify({"Message": "You did not send any selected interests for the user"})
 
         doc = collection.find_one({"email": email}, {"_id": 0})
         savedInterests = doc["interests"]
@@ -369,6 +372,10 @@ def getJobs():
         # save the jobs into the users likedJobs field
         likedJobs = doc["likedJobs"]
         recievedJobs = request.json.get("jobsSelected")
+
+        if recievedJobs == None:
+            return jsonify({"Message": f"You did not send any jobs for this user."})
+            
         for job in recievedJobs:
             newJob = isNewJob(job, likedJobs)
             if newJob:
