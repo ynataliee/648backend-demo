@@ -78,3 +78,9 @@ def generateProjects(job, userContext="No additional info at this moment"):
 
     response_as_dict = output_parser.parse(response.content)
     return response_as_dict
+
+# This is added so that many files can reuse the function get_database()
+if __name__ == "__main__":   
+  
+   # Call Langchain pipeline
+   projects = generateProjects()
