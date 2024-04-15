@@ -386,6 +386,51 @@ def getJobs():
 
         return jsonify({"jobsAdded": likedJobs})
 
+@app.route("/generateProjects", methods = ["GET"])
+def genProjects():
+    db = get_database("sample_training")
+    collection = db["testUsers"]
+    # check if the user exists in the database with thier email 
+    email = request.headers["email"]
+    doc = collection.find_one({"email": email}, {"_id": 0})
+    if doc == None:
+        return jsonify({"Message": f"No user with email {email} exists."})
+
+    selectedJobs = doc["currentlySelectedJobs"]
+    if len(selectedJobs) == 0:
+        return jsonify({"message": "User has no recently selected jobs to generate a project from."})
+
+    projects = []
+    for job in selectedJobs:
+        # project is a dictionary
+        project = generateProjects(job=job)
+        projects.append(project)
+
+    # saving the projects generated into the users savedProjects in database
+    savedProjects = doc["savedProjects"]
+    for project in projects:
+        savedProjects.append(project)
+    
+    update = {"$set": {"savedProjects": savedProjects}}
+    collection.update_one({"email": email}, update)
+
+    return jsonify({"generatedProjects": projects})
+
+@app.route("/getProjects", methods = ["GET"])
+def getProjects():
+    db = get_database("sample_training")
+    collection = db["testUsers"]
+    # check if the user exists in the database with thier email 
+    email = request.headers["email"]
+    doc = collection.find_one({"email": email}, {"_id": 0})
+    if doc == None:
+        return jsonify({"Message": f"No user with email {email} exists."})
+    savedProjects = doc["savedProjects"]
+
+    if len(savedProjects) == 0:
+        return jsonify({"message": "No projects generated for this user yet.."})
+
+    return jsonify({"savedProjects": savedProjects})
 
 
 # if we run the file directly do this, if we are importing this file then dont
