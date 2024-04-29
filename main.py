@@ -66,6 +66,13 @@ def job_search():
     
     return jsonify({"jobs": jsonDocs})
 
+@app.route("/interestTags", methods = ["GET"])
+def interestTags():
+    if request.method == "POST":
+        
+    else:
+
+
 # if we run the file directly do this, if we are importing this file then dont
 # do this, maybe you just want another file to access the functions 
 if __name__ == "__main__":
