@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, abort
 from config import get_database, app
+from projects import generateProjects
 import requests
 import pickle
 import json
@@ -243,13 +244,8 @@ def interestTags():
             print("tag: ", tag, "\n")
         return jsonify({"interestTags": tags})
     else:
-        """TO DO 
-        - Need to store the interests selected into the doc for the user 
-        - this means that we need the user logged in to save thier interests
-        - case where we can do this without having the user loggedin??
-        """
         db = get_database("sample_training")
-        collection = db["testUsers"]
+        collection = db["users"]
 
         email = request.json.get("email")
         recievedInterests = request.json.get("selectedInterests")
@@ -258,16 +254,64 @@ def interestTags():
             return jsonify({"Message": "You did not send any selected interests for the user"})
 
         doc = collection.find_one({"email": email}, {"_id": 0})
+        # more exception handling
+        if doc == None:
+            return jsonify({"Message": f"No user with email {email} exists."})
+        
+        # the user exists and we can get thier interests
         savedInterests = doc["interests"]
         for interest in recievedInterests:
             if interest not in savedInterests:
                 savedInterests.append(interest)
 
         update = {"$set": {"interests": savedInterests}}
-        collection.update_one({"email": email}, update)
-        # if the interest is not already in the list of interests then add it 
+        collection.update_one({"email": email}, update) 
 
         return jsonify({"savedInterests": savedInterests})
+    
+@app.route("/aboutUserTags", methods = ["GET", "POST"])
+def aboutUserTags():
+    if request.method == "GET":
+        # accessing the collection with the about user tags 
+        db = get_database("sample_training")
+        collection = db["aboutUserTags"]
+
+        # retrieving the doc with the tags in it, only showing fields we need
+        projection = {"_id" : 0}
+        doc = collection.find_one({}, projection)
+
+        gradeLevel = doc.get("gradeLevel")
+        technicalSkills = doc.get("technicalSkills")
+
+        return jsonify({"gradeLevelTags": gradeLevel, "technicalSkillsTags": technicalSkills})
+    else:
+        db = get_database("sample_training")
+        collection = db["users"]
+
+        email = request.json.get("email")
+        # frontend needs to put the selected about user tags into a field called aboutUser
+        # this is a list of strings where each string is a tag that the user selected 
+        recievedAboutUser = request.json.get("aboutUser")
+        # exception handling
+        if recievedAboutUser == None:
+            return jsonify({"Message": f"You did not send any about user tags for {email}"})
+
+        # getting doc with users information 
+        doc = collection.find_one({"email": email}, {"_id": 0})
+        # more exception handling
+        if doc == None:
+            return jsonify({"Message": f"No user with email {email} exists."})
+        
+        # the user exists and we can get thier about tags
+        savedAboutUser = doc["aboutUser"]
+        for tag in recievedAboutUser:
+            if tag not in savedAboutUser:
+                savedAboutUser.append(tag)
+
+        update = {"$set": {"interests": savedAboutUser}}
+        collection.update_one({"email": email}, update) 
+
+        return jsonify({"savedInterests": savedAboutUser})
 
 def isNewJob(job, likedJobs):
     """ 
