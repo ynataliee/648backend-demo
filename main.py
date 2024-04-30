@@ -308,10 +308,10 @@ def aboutUserTags():
             if tag not in savedAboutUser:
                 savedAboutUser.append(tag)
 
-        update = {"$set": {"interests": savedAboutUser}}
+        update = {"$set": {"aboutUser": savedAboutUser}}
         collection.update_one({"email": email}, update) 
 
-        return jsonify({"savedInterests": savedAboutUser})
+        return jsonify({"savedAboutUser": savedAboutUser})
 
 def isNewJob(job, likedJobs):
     """ 
