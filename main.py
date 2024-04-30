@@ -333,7 +333,7 @@ def getJobs():
     if request.method == "GET":
         # loading database
         db = get_database("sample_training")
-        collection = db["testUsers"]
+        collection = db["users"]
         # check if the user exists in the database with thier email 
         email = request.headers["email"]
         doc = collection.find_one({"email": email}, {"_id": 0})
@@ -381,7 +381,7 @@ def getJobs():
     if request.method == "POST":
          # loading database
         db = get_database("sample_training")
-        collection = db["testUsers"]
+        collection = db["users"]
         # check if the user exists in the database with thier email 
         email = request.json.get("email")
         doc = collection.find_one({"email": email}, {"_id": 0})
@@ -408,7 +408,7 @@ def getJobs():
 @app.route("/generateProjects", methods = ["GET"])
 def genProjects():
     db = get_database("sample_training")
-    collection = db["testUsers"]
+    collection = db["users"]
     # check if the user exists in the database with thier email 
     email = request.headers["email"]
     doc = collection.find_one({"email": email}, {"_id": 0})
@@ -438,7 +438,7 @@ def genProjects():
 @app.route("/getProjects", methods = ["GET"])
 def getProjects():
     db = get_database("sample_training")
-    collection = db["testUsers"]
+    collection = db["users"]
     # check if the user exists in the database with thier email 
     email = request.headers["email"]
     doc = collection.find_one({"email": email}, {"_id": 0})
