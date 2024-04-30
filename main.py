@@ -25,7 +25,11 @@ user_schema = {
     "username": "",
     "password": "",
     "email": "",
-    "userTags": ""
+    "interests": [],
+    "aboutUser": [], 
+    "savedProjects": [], # projects the user has "liked" or selected to save
+    "likedJobs": [], # all the jobs the user has selected, in other words, thier history of selected jobs
+    "currentlySelectedJobs": [] # the most recent set of jobs they have selected, these will be used to generate projects from 
 }
 
 #session_schema for storing sessions
@@ -239,9 +243,7 @@ def interestTags():
         projection = {"_id" : 0}
         doc = collection.find_one({}, projection)
         tags = doc.get("interests")
-        print("type: ", type(tags))
-        for tag in tags:
-            print("tag: ", tag, "\n")
+        
         return jsonify({"interestTags": tags})
     else:
         db = get_database("sample_training")
@@ -328,7 +330,7 @@ def isNewJob(job, likedJobs):
             return False
     return True
 
-@app.route("/getJobs", methods = ["GET", "POST"])
+@app.route("/searchJobs", methods = ["GET", "POST"])
 def getJobs():
     if request.method == "GET":
         # loading database
