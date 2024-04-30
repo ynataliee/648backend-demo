@@ -417,23 +417,17 @@ def genProjects():
     if doc == None:
         return jsonify({"Message": f"No user with email {email} exists."})
 
+    # retrieving the jobs to use to generate the projects from 
     selectedJobs = doc["currentlySelectedJobs"]
     if len(selectedJobs) == 0:
         return jsonify({"message": "User has no recently selected jobs to generate a project from."})
 
+    # calling LLM to generate the projects, they will be appended to the projects list
     projects = []
     for job in selectedJobs:
         # project is a dictionary
         project = generateProjects(job=job)
         projects.append(project)
-
-    # saving the projects generated into the users savedProjects in database
-    savedProjects = doc["savedProjects"]
-    for project in projects:
-        savedProjects.append(project)
-    
-    update = {"$set": {"savedProjects": savedProjects}}
-    collection.update_one({"email": email}, update)
 
     return jsonify({"generatedProjects": projects})
 
