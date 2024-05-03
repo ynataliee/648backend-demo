@@ -5,6 +5,7 @@ import requests
 import pickle
 import json
 import os
+import re
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt, check_password_hash
@@ -193,22 +194,6 @@ def logout():
         })
 
 
-@app.route("/projects", methods = ["GET"])
-def get_projects():
-    db = get_database("sample_training")
-    collection = db["records"]
-    res = collection.find_one({"name": "Sam See"})
-    print(type(res.get("projects")))
-    # to use jsonify you need to turn data into a python dictionary and 
-    # then we can call jsonify on it
-    # the get() returns a list of python dictionaries 
-    data = {}
-    data["projects"] = res.get("projects")
-    # for proj in res.get("projects"):
-    #     projects[]
-    response = jsonify(data)
-    return response
-
 @app.route("/search", methods = ["GET"])
 def job_search():
     tags = request.args.get('tags')
@@ -244,7 +229,7 @@ def interestTags():
         doc = collection.find_one({}, projection)
         tags = doc.get("interests")
         
-        return jsonify({"interestTags": tags})
+        return jsonify({"interestTags": tags, "status": "200"})
     else:
         db = get_database("sample_training")
         collection = db["users"]
@@ -253,12 +238,12 @@ def interestTags():
         recievedInterests = request.json.get("selectedInterests")
         # exception handling
         if recievedInterests == None:
-            return jsonify({"Message": "You did not send any selected interests for the user"})
+            return jsonify({"Message": "You did not send any selected interests for the user", "status": "404"})
 
         doc = collection.find_one({"email": email}, {"_id": 0})
         # more exception handling
         if doc == None:
-            return jsonify({"Message": f"No user with email {email} exists."})
+            return jsonify({"Message": f"No user with email {email} exists.", "status": "404"})
         
         # the user exists and we can get thier interests
         savedInterests = doc["interests"]
@@ -269,7 +254,7 @@ def interestTags():
         update = {"$set": {"interests": savedInterests}}
         collection.update_one({"email": email}, update) 
 
-        return jsonify({"savedInterests": savedInterests})
+        return jsonify({"savedInterests": savedInterests, "status": "200"})
     
 @app.route("/aboutUserTags", methods = ["GET", "POST"])
 def aboutUserTags():
@@ -285,7 +270,7 @@ def aboutUserTags():
         gradeLevel = doc.get("gradeLevel")
         technicalSkills = doc.get("technicalSkills")
 
-        return jsonify({"gradeLevelTags": gradeLevel, "technicalSkillsTags": technicalSkills})
+        return jsonify({"gradeLevelTags": gradeLevel, "technicalSkillsTags": technicalSkills, "status": "200"})
     else:
         db = get_database("sample_training")
         collection = db["users"]
@@ -296,13 +281,13 @@ def aboutUserTags():
         recievedAboutUser = request.json.get("aboutUser")
         # exception handling
         if recievedAboutUser == None:
-            return jsonify({"Message": f"You did not send any about user tags for {email}"})
+            return jsonify({"Message": f"You did not send any about user tags for {email}", "status": "404"})
 
         # getting doc with users information 
         doc = collection.find_one({"email": email}, {"_id": 0})
         # more exception handling
         if doc == None:
-            return jsonify({"Message": f"No user with email {email} exists."})
+            return jsonify({"Message": f"No user with email {email} exists.", "status": "404"})
         
         # the user exists and we can get thier about tags
         savedAboutUser = doc["aboutUser"]
@@ -313,7 +298,7 @@ def aboutUserTags():
         update = {"$set": {"aboutUser": savedAboutUser}}
         collection.update_one({"email": email}, update) 
 
-        return jsonify({"savedAboutUser": savedAboutUser})
+        return jsonify({"savedAboutUser": savedAboutUser, "status": "200"})
 
 def isNewJob(job, likedJobs):
     """ 
@@ -340,13 +325,13 @@ def getJobs():
         email = request.headers["email"]
         doc = collection.find_one({"email": email}, {"_id": 0})
         if doc == None:
-            return jsonify({"Message": f"No user with email {email} exists."})
+            return jsonify({"Message": f"No user with email {email} exists.", "status": "404"})
         # if we made it to here then we have the users information
         savedInterests = doc["interests"]
 
         # handle the case where the user has no saved interests yet 
         if len(savedInterests) == 0:
-            return jsonify({"Message": f"User with email {email} has no saved interests.", "Error": "No saved interests."})
+            return jsonify({"Message": f"User with email {email} has no saved interests.", "Error": "No saved interests.", "status": "404"})
         
         # call the jobs api to search for jobs 
         url = "https://jsearch.p.rapidapi.com/search"
@@ -377,8 +362,9 @@ def getJobs():
         # Pickle the Python dictionary
         #with open("./output/jobsAPIResponse2.pickle", "wb") as pickle_file:
             #pickle.dump(responseToDict, pickle_file)
-        
-        return dummyJsonData #jsonJobsResponse
+        jsonDict["status"] = "200"
+
+        return  jsonify(jsonDict) #jsonify(jsonDict, {"status": "200"})  #jsonJobsResponse
 
     if request.method == "POST":
          # loading database
@@ -388,14 +374,14 @@ def getJobs():
         email = request.json.get("email")
         doc = collection.find_one({"email": email}, {"_id": 0})
         if doc == None:
-            return jsonify({"Message": f"No user with email {email} exists."})
+            return jsonify({"Message": f"No user with email {email} exists.", "status": "404"})
         
         # save the jobs into the users likedJobs field
         likedJobs = doc["likedJobs"]
         recievedJobs = request.json.get("jobsSelected")
 
         if recievedJobs == None:
-            return jsonify({"Message": f"You did not send any jobs for this user."})
+            return jsonify({"Message": f"You did not send any jobs for this user.", "status": "404"})
             
         for job in recievedJobs:
             newJob = isNewJob(job, likedJobs)
@@ -405,7 +391,7 @@ def getJobs():
         update = {"$set": {"likedJobs": likedJobs, "currentlySelectedJobs": recievedJobs}}
         collection.update_one({"email": email}, update) 
 
-        return jsonify({"jobsAdded": likedJobs})
+        return jsonify({"jobsAdded": likedJobs, "status": "200"})
 
 @app.route("/generateProjects", methods = ["GET"])
 def genProjects():
@@ -415,12 +401,12 @@ def genProjects():
     email = request.headers["email"]
     doc = collection.find_one({"email": email}, {"_id": 0})
     if doc == None:
-        return jsonify({"Message": f"No user with email {email} exists."})
+        return jsonify({"Message": f"No user with email {email} exists.", "status": "404"})
 
     # retrieving the jobs to use to generate the projects from 
     selectedJobs = doc["currentlySelectedJobs"]
     if len(selectedJobs) == 0:
-        return jsonify({"message": "User has no recently selected jobs to generate a project from."})
+        return jsonify({"message": "User has no recently selected jobs to generate a project from.", "status": "404"})
 
     # calling LLM to generate the projects, they will be appended to the projects list
     projects = []
@@ -429,7 +415,7 @@ def genProjects():
         project = generateProjects(job=job)
         projects.append(project)
 
-    return jsonify({"generatedProjects": projects})
+    return jsonify({"generatedProjects": projects, "status": "200"})
 
 @app.route("/getProjects", methods = ["GET"])
 def getProjects():
@@ -439,13 +425,13 @@ def getProjects():
     email = request.headers["email"]
     doc = collection.find_one({"email": email}, {"_id": 0})
     if doc == None:
-        return jsonify({"Message": f"No user with email {email} exists."})
+        return jsonify({"Message": f"No user with email {email} exists.", "status": "404"})
     savedProjects = doc["savedProjects"]
 
     if len(savedProjects) == 0:
-        return jsonify({"message": "No projects generated for this user yet.."})
+        return jsonify({"message": "No projects generated for this user yet..", "status": "404"})
 
-    return jsonify({"savedProjects": savedProjects})
+    return jsonify({"savedProjects": savedProjects, "status": "200"})
 
 
 # if we run the file directly do this, if we are importing this file then dont
