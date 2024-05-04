@@ -119,7 +119,7 @@ def login():
     password = str(request.json["password"])
 
     response = collection.find_one({"email": email}, {'_id': False})
-    if( response == None):
+    if (response == None):
         return jsonify({
             "response": "User doesn't exist",
             "status": "404"
@@ -150,7 +150,7 @@ def login():
             "token": sessionToken
         })
 
-        #later on should clear session_schema after insert
+        # later on should clear session_schema after insert
 
         return jsonify({
             "response": f'{email} has been logged in',
