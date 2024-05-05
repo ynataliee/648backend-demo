@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt, check_password_hash
 from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
-
+from projects import generateProjects
 
 
 # jsonify is used to create a json response
@@ -24,17 +24,6 @@ from pymongo import MongoClient
 # default port for the HTTPS protocol is 443
 
 
-'''
-create -> name, skills, interests (to make it easier maybe let the user type this in for milestone 2, 
-in the real app we want to controll the skills and interests to avaoid typos and stuff)
-
-get -> search by project tags 
-
-we need to create a class to represent each of our users and the object fields(like projects)
-that are in our DB so that we can use jsonable_encoder to turn everything we need to send to the backend 
-to json
-
-'''
 #initialising our libraries with this app
 load_dotenv()
 Bcrypt = Bcrypt(app)
@@ -61,15 +50,18 @@ session_schema = {
 
 
 #testing
-@app.route("/test", methods = ["GET"])
+@app.route("/test", methods = ["POST"])
 @jwt_required()
 def getUser():
     db = get_database("sample_training")
     collection = db["sessions"]
 
-    # email = request.json["email"]
+    email = request.json["email"]
+    #print(email)
+    #print(type(email))
     jwtEmail = get_jwt_identity()
     token = request.json["token"]
+    #print(token)
 
     if(validateSession(jwtEmail, token) == True):
         return jsonify({
@@ -98,6 +90,63 @@ def validateSession(email, token):
             return True 
     else:
         return False
+
+@app.route("/saveProjects", methods = ["GET", "POST"])
+@jwt_required()
+def saveProjects():
+    
+    db = get_database("sample_training")
+    collection = db["sessions"]
+
+    # email = request.json["email"]
+    jwtEmail = get_jwt_identity()
+
+    if(jwtEmail != request.json["email"]):
+        return jsonify({
+            "response": "You're not Authorized",
+            "status": 401
+        })
+
+    token = request.json["token"]
+
+    if(validateSession(jwtEmail, token) == False):
+        return jsonify({
+            "response": "You're not Authorized",
+            "status": 401
+        })
+
+    collection = db["users"]
+
+    if( request.method == "POST" ):
+        collection = db["users"]
+        # frontend should send back the savedJobs with the field savedProjects 
+        userSavedProjects = request.json["generatedProjects"] # change to a different key after testing
+        
+        for index in range( len(userSavedProjects) ):
+            collection.find_one_and_update({"email": jwtEmail},
+                                    { '$push': { "savedProjects" : userSavedProjects[index] } } )
+        
+        
+        return jsonify({
+            "response": "Projects have been saved.",
+            "status": 200
+        })
+    
+    if( request.method == "GET" ):
+        collection = db["users"]
+        returnSavedJobs = []
+
+        queryResult = collection.find_one({ "email": str(jwtEmail) }, {"_id": False, "username": False, "password": False,
+                                                                       "email": False, "interests": False, "likedJobs": False,
+                                                                       "currentlySelectedJobs": False})
+        
+        for index in range (len(queryResult["savedProjects"])):
+            returnSavedJobs.append(queryResult["savedProjects"][index])
+
+        return jsonify({
+            "response": returnSavedJobs,
+            "status": 200
+        })
 
 @app.route("/register", methods = ["POST"])
 def registerUser():
@@ -128,6 +177,7 @@ def registerUser():
             "status": "200"
         })
 
+
 # CURRENTLY UNDER MODIFICATION    
 @app.route("/login", methods = ["POST"])    
 def login():
@@ -143,7 +193,7 @@ def login():
             "response": "User doesn't exist",
             "status": "404"
         })
-    
+
     responsePass = response["password"]
 
     if ( Bcrypt.check_password_hash(responsePass, password) == True):
@@ -161,7 +211,13 @@ def login():
         # sessionDate = get_bson_datetime()
 
         sessionToken = create_access_token(identity=email)
-        
+
+        isNewUser = 1
+        responseProfile = response["aboutUser"]
+        responseInterest = response["interests"]
+
+        if( len(responseProfile) == 0 or len(responseInterest) == 0 ):
+            isNewUser = 0
 
         sessionCollection.insert_one({
             "createdAt": datetime.utcnow(),
@@ -176,6 +232,7 @@ def login():
             "token": f'{sessionToken}',
             "expires": "60 minutes",
             "email": email,
+	    "isNewUser": isNewUser,
             "status": "200"
         })
     else:
@@ -183,6 +240,7 @@ def login():
             "repsonse": "Password doesn't match",
             "status": "401"
         })
+
 
 @app.route("/logout", methods = ["POST"])
 @jwt_required()
@@ -277,20 +335,23 @@ def interestTags():
         collection = db["testUsers"]
 
         email = request.json.get("email")
+        print("Email: ", email, "\n")
         recievedInterests = request.json.get("selectedInterests")
         # exception handling
         if recievedInterests == None:
             return jsonify({"Message": "You did not send any selected interests for the user"})
 
         doc = collection.find_one({"email": email}, {"_id": 0})
+        if doc == None:
+            return jsonify({"Message": f"No user with email {email} exists."})
+
         savedInterests = doc["interests"]
         for interest in recievedInterests:
             if interest not in savedInterests:
                 savedInterests.append(interest)
 
         update = {"$set": {"interests": savedInterests}}
-        collection.update_one({"email": email}, update)
-        # if the interest is not already in the list of interests then add it 
+        collection.update_one({"email": email}, update) 
 
         return jsonify({"savedInterests": savedInterests})
 
@@ -338,26 +399,10 @@ def getJobs():
         }
 
         # uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
-        #jobsApiRes = requests.get(url, headers=headers, params=querystring)
-        #jsonJobsResponse = jobsApiRes.json()
-
-        # Open the pickle file where the jobsAPI response was saved, to use it as example data 
-        # to not waste our free api calls
-        with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
-            # Deserialize the data from the file
-            data = pickle.load(f)
-        # turn the saved jobsapi response to json format 
-        dummyJsonData = json.dumps(data)
-        jsonDict = json.loads(dummyJsonData)
-        print(type(jsonDict))
-        # pickle json response so that we dont have to make more calls to the jobs API
-        # Convert JSON object to a Python dictionary
-        #responseToDict = json.loads(json.dumps(jsonJobsResponse))
-        # Pickle the Python dictionary
-        #with open("./output/jobsAPIResponse2.pickle", "wb") as pickle_file:
-            #pickle.dump(responseToDict, pickle_file)
+        jobsApiRes = requests.get(url, headers=headers, params=querystring)
+        jsonJobsResponse = jobsApiRes.json()
         
-        return dummyJsonData #jsonJobsResponse
+        return jsonJobsResponse #dummyJsonData
 
     if request.method == "POST":
          # loading database
