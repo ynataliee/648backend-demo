@@ -14,19 +14,6 @@ from pymongo import MongoClient
 
 from projects import generateProjects
 
-
-# jsonify is used to create a json response
-# CORS is for cross origin requests 
-# CORS gives web servers the ability to say they want to opt into allowing 
-# cross-origin access to their resources
-# CORS is a part of HTTP that lets servers specify *any other hosts* from which a 
-# browser should permit loading of content --> so we would need to have this to specify that we allow our front end
-# to access these objects 
-# what happens if we don't have this ??
-# Two objects have the same *origin* only when the scheme(protocol), hostname(domain), and port of URL all match.
-# default port for the HTTPS protocol is 443
-
-
 #initialising our libraries with this app
 load_dotenv()
 Bcrypt = Bcrypt(app)
@@ -54,7 +41,6 @@ session_schema = {
     "email": "",
     "token": ""
 }
-
 
 def validateSession(email, token):
     db = get_database("sample_training")
@@ -257,7 +243,6 @@ def logout():
             "response": "Unable to perform logout",
             "status": 404
         })
-
 
 @app.route("/interestTags", methods = ["GET", "POST"])
 def interestTags():
