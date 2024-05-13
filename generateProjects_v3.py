@@ -98,6 +98,9 @@ should be in a tutorial like form with lots of details. For each technology or f
 Here is the project idea:
 {projectIdea}
 
+Also create three resume bullet points about the project you generate that the user can put on thier resume. Only include three resume bullet points, be concise and clear with the 
+resume bullet points.
+
 {formatInstructions}
 """
 
@@ -161,9 +164,9 @@ step_schema = ResponseSchema(name="steps", description="""each step name in the 
      - For Leaflet, refer to the official documentation: https://leafletjs.com/reference-1.7.1.html 
      this step would have the following format as a dictionary:
      "{'2. Design the frontend interface to display a map.': ['- How to: Utilize Mapbox GL JS or Leaflet to add a map component to your React app.','For Mapbox GL JS, refer to the official documentation: https://docs.mapbox.com/mapbox-gl-js/api/', ect... ]} """, type='Dict[str, List[str]]')
-
+resumeBulletPoints = ResponseSchema(name="resumeBulletPoints", description="This is where you put the generated resume bullet points for the project that was generated. This will be a list of strings where each string is a bullet point.", type='List[str]')
 # List of ResponseSchemas to be used by StructuredOutputParser to parse the output of LLM
-responseSchemas2 = [title_schema, summary_schema, techStack_schema, step_schema, applyLinksSchema, targetInternships, reasoning]
+responseSchemas2 = [title_schema, summary_schema, techStack_schema, step_schema, applyLinksSchema, targetInternships, reasoning, resumeBulletPoints]
 # returns a StructuredOutputParser using the list of ResponseSchema Objects - this is how StructuredOutputParsers are constructed
 output_parser2 = StructuredOutputParser.from_response_schemas(responseSchemas2)
 # returns the format instructions str
