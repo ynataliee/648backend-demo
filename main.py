@@ -12,6 +12,7 @@ from flask_bcrypt import Bcrypt, check_password_hash
 from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
 
+from projects import generateProjects
 #initialising our libraries with this app
 load_dotenv()
 Bcrypt = Bcrypt(app)
@@ -30,7 +31,7 @@ user_schema = {
     "aboutUser": [], 
     "savedProjects": [], # projects the user has "liked" or selected to save
     "likedJobs": [], # all the jobs the user has selected, in other words, thier history of selected jobs
-    "currentlySelectedJobs": [] # the most recent set of jobs they have selected, these will be used to generate projects from 
+    "currentlySelectedJobs": [] # the most recent set of jobs they have selected, these will be used to generate projects from
 }
 
 #session_schema for storing sessions
@@ -39,34 +40,7 @@ session_schema = {
     "email": "",
     "token": ""
 }
-
-
-#testing
-@app.route("/test", methods = ["GET"])
-@jwt_required()
-def getUser():
-    db = get_database("sample_training")
-    collection = db["sessions"]
-
-    # email = request.json["email"]
-    jwtEmail = get_jwt_identity()
-    token = request.json["token"]
-
-    if(validateSession(jwtEmail, token) == True):
-        return jsonify({
-            "response": "Authorized user found",
-            "status": "200"
-        })
-    else:
-        return jsonify({
-            "response": "You are not authorized",
-            "status": "401"
-        })
-    
-    
-####  
-
-    
+     
 def validateSession(email, token):
     db = get_database("sample_training")
     collection = db["sessions"]
@@ -192,32 +166,6 @@ def logout():
             "response": "Unable to perform logout",
             "status": "404"
         })
-
-
-@app.route("/search", methods = ["GET"])
-def job_search():
-    tags = request.args.get('tags')
-    #print("TAGS: ", tags, "\n\n")
-    db = get_database("sample_training")
-    collection = db["jobDescriptions"]
-
-    print("tag from query: ", tags, "\n")
-    projection = {"_id" : 0}
-
-    regex_pattern = re.escape(tags) + '.*'
-    regex_query = {"tags": {"$regex": regex_pattern, "$options": "i"}}
-
-    matchedDocs = collection.find(regex_query, projection)
-    jsonDocs = []
-    print("got the results")
-    for doc in matchedDocs:
-        print(doc.get("jobTitle"))
-        print(type(doc))
-        print(doc)
-        #jsonDoc = json.dumps(doc)
-        jsonDocs.append(doc)
-    
-    return jsonify({"jobs": jsonDocs})
 
 @app.route("/interestTags", methods = ["GET", "POST"])
 def interestTags():
