@@ -45,7 +45,7 @@ user_schema = {
     "aboutUser": [], 
     "savedProjects": [], # projects the user has "liked" or selected to save
     "likedJobs": [], # all the jobs the user has selected, in other words, thier history of selected jobs
-    "currentlySelectedJobs": [] # the most recent set of jobs they have selected, these will be used to generate projects from 
+    "currentlySelectedJobs": [] # the most recent set of jobs they have selected, these will be used to generate projects from
 }
 
 #session_schema for storing sessions
@@ -56,35 +56,6 @@ session_schema = {
 }
 
 
-#testing
-@app.route("/test", methods = ["POST"])
-@jwt_required()
-def getUser():
-    db = get_database("sample_training")
-    collection = db["sessions"]
-
-    email = request.json["email"]
-    #print(email)
-    #print(type(email))
-    jwtEmail = get_jwt_identity()
-    token = request.json["token"]
-    #print(token)
-
-    if(validateSession(jwtEmail, token) == True):
-        return jsonify({
-            "response": "Authorized user found",
-            "status": "200"
-        })
-    else:
-        return jsonify({
-            "response": "You are not authorized",
-            "status": "401"
-        })
-    
-    
-####  
-
-    
 def validateSession(email, token):
     db = get_database("sample_training")
     collection = db["sessions"]
@@ -155,13 +126,14 @@ def saveProjects():
             "status": 200
         })
 
+
 @app.route("/register", methods = ["POST"])
 def registerUser():
     db = get_database("sample_training")
     collection = db["users"]
 
     username = request.json["username"]
-    password = str(request.json["password"])
+    password = request.json["password"]
     email = request.json["email"]
 
     userExist = collection.find_one({"email": email }, {'_id': False})
@@ -169,19 +141,28 @@ def registerUser():
     if(userExist != None):
         return jsonify({
             "response": "This user already exist",
-            "status": "403"
+            "status": 403
         })
     else:
-        user_schema["username"] = username
-        user_schema["password"] = Bcrypt.generate_password_hash(password).decode('utf-8')
-        user_schema["email"] = email
-        collection.insert_one(user_schema)
+        # user_schema["username"] = username
+        # user_schema["password"] = Bcrypt.generate_password_hash(password).decode('utf-8')
+        # user_schema["email"] = email
+        collection.insert_one({
+            "username": username,
+            "password": Bcrypt.generate_password_hash(password).decode('utf-8'),
+            "email": email,
+            "interests": [],
+	    "aboutUser":[],
+            "savedProjects": [],
+            "likedJobs": [],
+            "currentlySelectedJobs": []
+        })
 
         #later on should clear session_schema after insert
 
         return jsonify({
             "response": "User has been registered.",
-            "status": "200"
+            "status": 200
         })
 
 
@@ -192,13 +173,13 @@ def login():
     collection = db["users"]
 
     email = request.json["email"]
-    password = str(request.json["password"])
+    password = request.json["password"]
 
     response = collection.find_one({"email": email}, {'_id': False})
     if (response == None):
         return jsonify({
             "response": "User doesn't exist",
-            "status": "404"
+            "status": 404
         })
 
     responsePass = response["password"]
@@ -211,7 +192,7 @@ def login():
             print(sessionCollection.find_one({"email": email}, {'_id': False}))
             return jsonify({
                 "response": "This user already has an active session",
-                "status": "403"
+                "status": 403
             })
 
         # ### We are here trying to store session into new collection
@@ -240,12 +221,12 @@ def login():
             "expires": "60 minutes",
             "email": email,
 	    "isNewUser": isNewUser,
-            "status": "200"
+            "status": 200
         })
     else:
         return jsonify({
             "repsonse": "Password doesn't match",
-            "status": "401"
+            "status": 401
         })
 
 
@@ -259,7 +240,7 @@ def logout():
     if(requestEmail != get_jwt_identity()):
         return jsonify({
             "response": "You are not authorized to perform this action",
-            "status": "401"
+            "status": 401
         })
 
     requestToken = request.json["token"]
@@ -269,39 +250,14 @@ def logout():
         collection.delete_one(query)
         return jsonify({
             "response": "User has been logged out",
-            "status": "200"
+            "status": 200
         })
     else:
         return jsonify({
             "response": "Unable to perform logout",
-            "status": "404"
+            "status": 404
         })
 
-
-@app.route("/search", methods = ["GET"])
-def job_search():
-    tags = request.args.get('tags')
-    #print("TAGS: ", tags, "\n\n")
-    db = get_database("sample_training")
-    collection = db["jobDescriptions"]
-
-    print("tag from query: ", tags, "\n")
-    projection = {"_id" : 0}
-
-    regex_pattern = re.escape(tags) + '.*'
-    regex_query = {"tags": {"$regex": regex_pattern, "$options": "i"}}
-
-    matchedDocs = collection.find(regex_query, projection)
-    jsonDocs = []
-    print("got the results")
-    for doc in matchedDocs:
-        print(doc.get("jobTitle"))
-        print(type(doc))
-        print(doc)
-        #jsonDoc = json.dumps(doc)
-        jsonDocs.append(doc)
-    
-    return jsonify({"jobs": jsonDocs})
 
 @app.route("/interestTags", methods = ["GET", "POST"])
 def interestTags():
