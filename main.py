@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
 
 from projects import generateProjects
+from generateProjects_v3.py import getDemoProjects, combinedProjects, evaluateCombinedProj, getFinalProj
 
 #initialising our libraries with this app
 load_dotenv()
@@ -432,17 +433,22 @@ def genProjects():
 
     # retrieving the jobs to use to generate the projects from 
     selectedJobs = doc["currentlySelectedJobs"]
+    userContext = doc["aboutUser"]
     if len(selectedJobs) == 0:
         return jsonify({"message": "User has no recently selected jobs to generate a project from.", "status": "404"})
 
     # calling LLM to generate the projects, they will be appended to the projects list
-    projects = []
+    demoProjects = []
     for job in selectedJobs:
         # project is a dictionary
-        project = generateProjects(job=job)
-        projects.append(project)
+        demoProject = getDemoProjects(job=job, userContext=userContext)
+        demoProjects.append(demoProject)
 
-    return jsonify({"generatedProjects": projects, "status": "200"})
+    combinedProject = combinedProjects(demoProjects, selectedJobs, userContext)
+    updatedProject = evaluateCombinedProj(combinedProject, userContext)
+    finalProject = getFinalProj(updatedProject)
+
+    return jsonify({"generatedProject": finalProject, "status": "200"})
 
 @app.route("/getProjects", methods = ["GET"])
 def getProjects():
