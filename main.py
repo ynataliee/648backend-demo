@@ -372,27 +372,22 @@ def getJobs():
         }
 
         # uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
-        #jobsApiRes = requests.get(url, headers=headers, params=querystring)
-        #jsonJobsResponse = jobsApiRes.json()
+        jobsApiRes = requests.get(url, headers=headers, params=querystring)
+        jsonJobsResponse = jobsApiRes.json()
 
         # Open the pickle file where the jobsAPI response was saved, to use it as example data 
         # to not waste our free api calls
-        with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
+        #with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
             # Deserialize the data from the file
-            data = pickle.load(f)
+            #data = pickle.load(f)
         # turn the saved jobsapi response to json format 
-        dummyJsonData = json.dumps(data)
-        jsonDict = json.loads(dummyJsonData)
+        #dummyJsonData = json.dumps(data)
+        #jsonDict = json.loads(dummyJsonData)
 
-        # pickle json response so that we dont have to make more calls to the jobs API
-        # Convert JSON object to a Python dictionary
-        #responseToDict = json.loads(json.dumps(jsonJobsResponse))
-        # Pickle the Python dictionary
-        #with open("./output/jobsAPIResponse2.pickle", "wb") as pickle_file:
-            #pickle.dump(responseToDict, pickle_file)
-        jsonDict["status"] = "200"
+        #jsonDict["status"] = "200"
+	jsonJobsResponse["status"] = "200"
 	# currently returning dummy data
-        return  jsonify(jsonDict) #jsonify(jsonDict, {"status": "200"})  #jsonJobsResponse
+        return  jsonJobsResponse #jsonify(jsonDict)
 
     if request.method == "POST":
         # loading database
