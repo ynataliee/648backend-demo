@@ -367,19 +367,22 @@ def getJobs():
         # call the jobs api to search for jobs 
         url = "https://jsearch.p.rapidapi.com/search"
 
-	interestsToString = " "
-	for i in savedInterests:
-		interestsToString+= i + ", "
-        # format request to jobsAPI 
-        querystring = {"query":f" {interestsToString} internships in san francisco ca","page":"1","num_pages":"1"}
+        # format request to jobsAPI
+		queries = []
+        for interest in savedInterests:
+        	querystring = {"query":f" {interest} engineer internships in san francisco ca","page":"1","num_pages":"1"}
+        	queries.append(querystring)
         headers = {
             "X-RapidAPI-Key": "377585313cmshf1355d5b402d248p1b423bjsn233ad30d00f0",
             "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
         }
 
-        # uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
-        jobsApiRes = requests.get(url, headers=headers, params=querystring)
-        jsonJobsResponse = jobsApiRes.json()
+		jobResponses = []
+		for q in queries:
+			# uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
+            jobsApiRes = requests.get(url, headers=headers, params=q)
+            jsonJobsResponse = jobsApiRes.json()
+			jobResponses.append(jsonJobsResponse)
 
         # Open the pickle file where the jobsAPI response was saved, to use it as example data 
         # to not waste our free api calls
