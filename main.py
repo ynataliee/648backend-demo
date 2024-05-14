@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
 
 from projects import generateProjects
-from generateProjects_v3.py import getDemoProjects, combinedProjects, evaluateCombinedProj, getFinalProj
+from generateProjects_v3 import getDemoProjects, combinedProjects, evaluateCombinedProj, getFinalProj
 
 #initialising our libraries with this app
 load_dotenv()
@@ -428,6 +428,7 @@ def genProjects():
     # check if the user exists in the database with thier email 
     email = request.headers["email"]
     doc = collection.find_one({"email": email}, {"_id": 0})
+
     if doc == None:
         return jsonify({"Message": f"No user with email {email} exists.", "status": "404"})
 
@@ -447,8 +448,9 @@ def genProjects():
     combinedProject = combinedProjects(demoProjects, selectedJobs, userContext)
     updatedProject = evaluateCombinedProj(combinedProject, userContext)
     finalProject = getFinalProj(updatedProject)
-
-    return jsonify({"generatedProject": finalProject, "status": "200"})
+    projs = []
+    projs.append(finalProject)
+    return jsonify({"generatedProjects": projs, "status": "200"})
 
 @app.route("/getProjects", methods = ["GET"])
 def getProjects():
