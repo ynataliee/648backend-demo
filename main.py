@@ -385,9 +385,10 @@ def getJobs():
         #jsonDict = json.loads(dummyJsonData)
 
         #jsonDict["status"] = "200"
-	jsonJobsResponse["status"] = "200"
+        jsonJobsResponse["status"] = "200"
+        print(jsonJobsResponse)
 	# currently returning dummy data
-        return  jsonJobsResponse #jsonify(jsonDict)
+        return jsonJobsResponse #jsonify(jsonDict)
 
     if request.method == "POST":
         # loading database
