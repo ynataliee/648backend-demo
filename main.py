@@ -345,6 +345,18 @@ def isNewJob(job, likedJobs):
 
 def parseJobSearch(data):
     print("parseJobSearch")
+    newListOfJobsCleaned = []
+    for dictionary in data:
+        for job in dictionary["data"]:
+            if job["job_employment_type"] == "INTERN":
+                dict = {}
+                dict["employer_name"] = job["employer_name"]
+                dict["job_title"] = job["job_title"]
+                dict["job_apply_link"] = job["job_apply_link"]
+                dict["job_description"] = job["job_description"]
+                dict["job_highlights"] = job["job_highlights"]
+                newListOfJobsCleaned.append(dict)
+    return newListOfJobsCleaned
 
 @app.route("/searchJobs", methods = ["GET", "POST"])
 def getJobs():
@@ -367,35 +379,45 @@ def getJobs():
         # call the jobs api to search for jobs 
         url = "https://jsearch.p.rapidapi.com/search"
 
-        interestsToString = " "
-        for i in savedInterests:
-            interestsToString+= i + ", "
-        # format request to jobsAPI 
-        querystring = {"query":f" {interestsToString} internships in san francisco ca","page":"1","num_pages":"1"}
+        # format request to jobsAPI
+        queries = []
+        for interest in savedInterests:
+            querystring = {"query":f" {interest} engineer internships in san francisco ca","page":"1","num_pages":"1"}
+            queries.append(querystring)
+            
         headers = {
             "X-RapidAPI-Key": "377585313cmshf1355d5b402d248p1b423bjsn233ad30d00f0",
             "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
         }
 
-        # uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
-        #jobsApiRes = requests.get(url, headers=headers, params=querystring)
-        #jsonJobsResponse = jobsApiRes.json()
-
+ 
+        #jobResponses = []
+        #for q in queries:
+	    # uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
+            #jobsApiRes = requests.get(url, headers=headers, params=q)
+            #jsonJobsResponse = jobsApiRes.json()
+            #jobResponses.append(jsonJobsResponse)
+    
         # Open the pickle file where the jobsAPI response was saved, to use it as example data 
         # to not waste our free api calls
-        with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
+        with open('./output/job_responses_list.pkl', 'rb') as f:
             # Deserialize the data from the file
             data = pickle.load(f)
-        # turn the saved jobsapi response to json format 
-        dummyJsonData = json.dumps(data)
-        jsonDict = json.loads(dummyJsonData)
 
-        jsonDict["status"] = "200"
+        # turn the saved jobsapi response to json format 
+        print("data type: ", type(data))
+        dummyJsonData = json.dumps(data)
+        # a list of dictionaries where each dictionary is a response 
+        # for the query given the users interests 
+        jsonDict = json.loads(dummyJsonData)
+        parsedJobs = parseJobSearch(jsonDict)
+
+
+        #jsonDict["status"] = "200"
         #jsonJobsResponse["status"] = "200"
         #print(jsonJobsResponse)
-        print(jsonDict)
-	# currently returning dummy data
-        return jsonify(jsonDict) #jsonJobsResponse
+	    # currently returning dummy data
+        return jsonify(parsedJobs) #jsonify(jsonDict) dummyJsonData  #jsonJobsResponse 
 
     if request.method == "POST":
         # loading database
