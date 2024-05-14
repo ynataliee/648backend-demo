@@ -184,4 +184,5 @@ def getFinalProj(updatedProj):
     input_prompt6 = ChatPromptTemplate.from_template(prompt6)
     chain6 = input_prompt6 | model | StrOutputParser() 
     finalProj = chain6.invoke({"projectIdea": updatedProj, "formatInstructions": format_instructions2})
-    return finalProj
+    response_as_dict = output_parser2.parse(finalProj.content)
+    return response_as_dict
