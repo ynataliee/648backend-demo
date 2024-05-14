@@ -343,6 +343,9 @@ def isNewJob(job, likedJobs):
             return False
     return True
 
+def parseJobSearch(data):
+    print("parseJobSearch")
+
 @app.route("/searchJobs", methods = ["GET", "POST"])
 def getJobs():
     if request.method == "GET":
@@ -364,8 +367,11 @@ def getJobs():
         # call the jobs api to search for jobs 
         url = "https://jsearch.p.rapidapi.com/search"
 
+	interestsToString = " "
+	for i in savedInterests:
+		interestsToString+= i + ", "
         # format request to jobsAPI 
-        querystring = {"query":f" {savedInterests} internships in san francisco ca","page":"1","num_pages":"1"}
+        querystring = {"query":f" {interestsToString} internships in san francisco ca","page":"1","num_pages":"1"}
         headers = {
             "X-RapidAPI-Key": "377585313cmshf1355d5b402d248p1b423bjsn233ad30d00f0",
             "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
