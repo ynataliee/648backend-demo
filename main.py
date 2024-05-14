@@ -367,9 +367,9 @@ def getJobs():
         # call the jobs api to search for jobs 
         url = "https://jsearch.p.rapidapi.com/search"
 
-	interestsToString = " "
-	for i in savedInterests:
-		interestsToString+= i + ", "
+        interestsToString = " "
+        for i in savedInterests:
+            interestsToString+= i + ", "
         # format request to jobsAPI 
         querystring = {"query":f" {interestsToString} internships in san francisco ca","page":"1","num_pages":"1"}
         headers = {
@@ -378,23 +378,24 @@ def getJobs():
         }
 
         # uncomment lines 135 and 136 to make a request to the real jobsAPI endpoint
-        jobsApiRes = requests.get(url, headers=headers, params=querystring)
-        jsonJobsResponse = jobsApiRes.json()
+        #jobsApiRes = requests.get(url, headers=headers, params=querystring)
+        #jsonJobsResponse = jobsApiRes.json()
 
         # Open the pickle file where the jobsAPI response was saved, to use it as example data 
         # to not waste our free api calls
-        #with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
+        with open('./output/jobsAPIResponse2.pickle', 'rb') as f:
             # Deserialize the data from the file
-            #data = pickle.load(f)
+            data = pickle.load(f)
         # turn the saved jobsapi response to json format 
-        #dummyJsonData = json.dumps(data)
-        #jsonDict = json.loads(dummyJsonData)
+        dummyJsonData = json.dumps(data)
+        jsonDict = json.loads(dummyJsonData)
 
-        #jsonDict["status"] = "200"
-        jsonJobsResponse["status"] = "200"
-        print(jsonJobsResponse)
+        jsonDict["status"] = "200"
+        #jsonJobsResponse["status"] = "200"
+        #print(jsonJobsResponse)
+        print(jsonDict)
 	# currently returning dummy data
-        return jsonJobsResponse #jsonify(jsonDict)
+        return jsonify(jsonDict) #jsonJobsResponse
 
     if request.method == "POST":
         # loading database
